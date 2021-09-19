@@ -802,6 +802,7 @@ drawbar(Monitor *m)
                 	drw_setscheme(drw, scheme[SchemeCol2]);
 		}
                 drw_rect(drw, x, 0, m->ww - x, bh, 1, 1); /* to keep right padding clean */
+                drw_rect(drw, x, 9, m->ww - x, bh, 1, 1); /* to keep right padding clean */
 
 	}
 
