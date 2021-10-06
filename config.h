@@ -10,6 +10,8 @@ static const unsigned int gappov    = 30;       /* vert outer gap between window
 static       int smartgaps          = 0;        /* 1 means no outer gap when there is only one window */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
+static const int vertpad            = 10;       /* vertical padding of bar */
+static const int sidepad            = 10;       /* horizontal padding of bar */
 static const char *fonts[]          = { "consolas:size=10", "NotoColorEmoji:pixelsize=10:antialias=true:autohint=true" };
 static const char dmenufont[]       = "consolas:size=15";
 static const char col_dcyan[]       = "#0d4d6b";
@@ -97,8 +99,7 @@ static const Layout layouts[] = {
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_dcyan, "-nf", col_orange, "-sb", col_pink, "-sf", col_yellow, NULL };
 static const char *termcmd[]  = { "st", NULL };
-static const char *upvol[]   = { "volumeDisplay.sh", "up", NULL};
-static const char *downvol[] = { "volumeDisplay.sh", "down", NULL };
+
 
 
 static Key keys[] = {
@@ -109,30 +110,30 @@ static Key keys[] = {
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	{ MODKEY,                       XK_o,      incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	/*Vanity gaps*/
-    	{ MODKEY|ShiftMask,             XK_h,      incrgaps,       {.i = +1 } },
-        { MODKEY|ShiftMask,             XK_l,      incrgaps,       {.i = -1 } },
-        { MODKEY|Mod1Mask,              XK_h,      incrogaps,      {.i = +1 } },
-        { MODKEY|Mod1Mask,              XK_l,      incrogaps,      {.i = -1 } },
-        { MODKEY|ControlMask,           XK_h,      incrigaps,      {.i = +1 } },
-        { MODKEY|ControlMask,           XK_l,      incrigaps,      {.i = -1 } },
-        { MODKEY,                       XK_g,      togglegaps,     {0} },
-        { MODKEY|ShiftMask,             XK_g,      defaultgaps,    {0} },
-        { MODKEY,                       XK_y,      incrihgaps,     {.i = +1 } },
-        { MODKEY,                       XK_o,      incrihgaps,     {.i = -1 } },
-        { MODKEY|ControlMask,           XK_y,      incrivgaps,     {.i = +1 } },
-        { MODKEY|ControlMask,           XK_o,      incrivgaps,     {.i = -1 } },
-        { MODKEY|Mod1Mask,              XK_y,      incrohgaps,     {.i = +1 } },
-        { MODKEY|Mod1Mask,              XK_o,      incrohgaps,     {.i = -1 } },
-        { MODKEY|ShiftMask,             XK_y,      incrovgaps,     {.i = +1 } },
-        { MODKEY|ShiftMask,             XK_o,      incrovgaps,     {.i = -1 } },
+  { MODKEY|ShiftMask,             XK_h,      incrgaps,       {.i = +1 } },
+  { MODKEY|ShiftMask,             XK_l,      incrgaps,       {.i = -1 } },
+  /* { MODKEY|Mod1Mask,              XK_h,      incrogaps,      {.i = +1 } }, */
+  /* { MODKEY|Mod1Mask,              XK_l,      incrogaps,      {.i = -1 } }, */
+  /* { MODKEY|ControlMask,           XK_h,      incrigaps,      {.i = +1 } }, */
+  /* { MODKEY|ControlMask,           XK_l,      incrigaps,      {.i = -1 } }, */
+  { MODKEY,                       XK_g,      togglegaps,     {0} },
+  { MODKEY|ShiftMask,             XK_g,      defaultgaps,    {0} },
+  /* { MODKEY,                       XK_y,      incrihgaps,     {.i = +1 } }, */
+  /* { MODKEY,                       XK_o,      incrihgaps,     {.i = -1 } }, */
+  /* { MODKEY|ControlMask,           XK_y,      incrivgaps,     {.i = +1 } }, */
+  /* { MODKEY|ControlMask,           XK_o,      incrivgaps,     {.i = -1 } }, */
+  /* { MODKEY|Mod1Mask,              XK_y,      incrohgaps,     {.i = +1 } }, */
+  /* { MODKEY|Mod1Mask,              XK_o,      incrohgaps,     {.i = -1 } }, */
+  /* { MODKEY|ShiftMask,             XK_y,      incrovgaps,     {.i = +1 } }, */
+  /* { MODKEY|ShiftMask,             XK_o,      incrovgaps,     {.i = -1 } }, */
     /*Vanity gaps*/
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
-	{ MODKEY,             		XK_x,      killclient,     {0} },
+	{ MODKEY,             		      XK_x,      killclient,     {0} },
 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[13]} },
 	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[1]} },
@@ -158,17 +159,6 @@ static Key keys[] = {
 	TAGKEYS(                        XK_8,                      7)
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
-	{ MODKEY|ControlMask,           XK_c,      spawn,          SHCMD("Count_Words") },
-  	{ MODKEY,                       XK_w,      spawn,          SHCMD("firefox") },
-  	{ MODKEY,                       XK_s,      spawn,          SHCMD("spotify") },
-  	{ MODKEY|ShiftMask,             XK_t,      spawn,          SHCMD("texstudio") },
-  	{ MODKEY|ShiftMask,             XK_w,      spawn,          SHCMD("Wallpaper") },
-  	{ MODKEY|ShiftMask,             XK_s,      spawn,          SHCMD("Search") },
-  	{ MODKEY,                       XK_e,      spawn,          SHCMD("pcmanfm") },
-  	{ MODKEY|ShiftMask,             XK_e,      spawn,          SHCMD("st -e vifm") },
-	{ MODKEY,             		XK_c,      spawn,          SHCMD("bash calc.sh") },
-	{ MODKEY,                       XK_F11,    spawn,          {.v = upvol   } },
-	{ MODKEY,                       XK_F10,    spawn,          {.v = downvol } },
 	{ MODKEY,             		XK_r,      reorganizetags, {0} },
 };
 
