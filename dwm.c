@@ -483,7 +483,7 @@ buttonpress(XEvent *e)
                         arg.ui = 1 << i;
                 } else if (ev->x < ble)
                         click = ClkLtSymbol;
-                else if (ev->x < selmon->ww - wstext)
+                else if (ev->x < selmon->ww - wstext - 2 * sp)
                         click = ClkWinTitle;
                 else if ((x = selmon->ww - 2 * sp - RSPAD - ev->x) > 0 && (x -= wstext - LSPAD - RSPAD) <= 0) {
                         updatedwmblockssig(x);
