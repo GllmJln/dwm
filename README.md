@@ -10,7 +10,7 @@ Includes patches in the `patches` folder.
 | **Patch** | **Description** |
 | --- | :--- |
 | [barpadding](https://dwm.suckless.org/patches/barpadding/) | Adds padding to the status bar, looks better when using rounded corners |
-| [dwmblocks](https://github.com/torrinfail/dwmblocks) | Scriptable, clickable blocks for the status bar |
+| [dwmblocks](https://github.com/ashish-yadav11/dwmblocks) | Scriptable, clickable blocks for the status bar |
 | [fixborders](https://dwm.suckless.org/patches/alpha/) | Fix the transparency of the border of transparent windows |
 | [pertag](https://dwm.suckless.org/patches/pertag/) | Make layouts, master window size and number of masters different on each tag |
 | [reorganizetags](https://dwm.suckless.org/patches/reorganizetags/) | Reorganise tags, shift all clients per tag to leftmost unoccupied tags |
