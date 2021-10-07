@@ -21,8 +21,7 @@ Includes patches in the `patches` folder.
 </div>
 
 ## Extra customisation
-
-- Different colour theme for status on selecter monitor and other monitor(s).
+- Different colour theme for status on selected monitor and other monitor(s).
 
 ## `libxft-bgra`
 
@@ -37,3 +36,4 @@ Bindings not relevant to dwm are set by [sxhkd](https://github.com/baskerville/s
 - [ ] Add bindings to documents somewhere
 - [ ] Gaps per tag?
 - [ ] More colour themes for use in dwmblocks?
+
