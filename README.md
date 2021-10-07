@@ -25,7 +25,7 @@ Includes patches in the `patches` folder.
 
 ## `libxft-bgra`
 
-[libxft-bgra](https://aur.archlinux.org/packages/libxft-bgra/) must be installed for proper display of emojis and colour characters in the bar. If it is not installed dwm will crash.
+[libxft-bgra](https://aur.archlinux.org/packages/libxft-bgra/) must be installed for proper display of emojis and colour characters in the status bar. If it is not installed dwm will crash.
 
 ## Bindings
 
