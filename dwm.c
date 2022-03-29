@@ -188,6 +188,7 @@ static Atom getatomprop(Client *c, Atom prop);
 static int getrootptr(int *x, int *y);
 static long getstate(Window w);
 static int gettextprop(Window w, Atom atom, char *text, unsigned int size);
+static void getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc);
 static void grabbuttons(Client *c, int focused);
 static void grabkeys(void);
 static void incnmaster(const Arg *arg);
@@ -230,6 +231,7 @@ static void tagmon(const Arg *arg);
 static void tagmonall(const Arg *arg);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
+static void togglegaps(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
@@ -300,9 +302,14 @@ struct Pertag {
 	unsigned int curtag, prevtag; /* current and previous tag */
 	int nmasters[LENGTH(tags) + 1]; /* number of windows in master area */
 	float mfacts[LENGTH(tags) + 1]; /* mfacts per tag */
+	float enablegaps[LENGTH(tags) + 1]; /* gaps per tag */
 	unsigned int sellts[LENGTH(tags) + 1]; /* selected layouts */
 	const Layout *ltidxs[LENGTH(tags) + 1][2]; /* matrix of tags and layouts indexes  */
 	int showbars[LENGTH(tags) + 1]; /* display bar for the current tag */
+	int gappih;           /* horizontal gap between windows */
+	int gappiv;           /* vertical gap between windows */
+	int gappoh;           /* horizontal outer gaps */
+	int gappov;           /* vertical outer gaps */
 };
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
@@ -705,6 +712,8 @@ createmon(void)
 		m->pertag->ltidxs[i][1] = m->lt[1];
 		m->pertag->sellts[i] = m->sellt;
 
+    m->pertag->enablegaps[i] = enablegaps;
+
 		m->pertag->showbars[i] = m->showbar;
 	}
 
@@ -1027,6 +1036,25 @@ gettextprop(Window w, Atom atom, char *text, unsigned int size)
 	text[size - 1] = '\0';
 	XFree(name.value);
 	return 1;
+}
+
+void
+getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc)
+{
+	unsigned int n, oe, ie;
+	oe = ie = selmon->pertag->enablegaps[selmon->pertag->curtag];
+	Client *c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	if (smartgaps && n == 1) {
+		oe = 0; // outer gaps disabled when only one client
+	}
+
+	*oh = m->gappoh*oe; // outer horizontal gap
+	*ov = m->gappov*oe; // outer vertical gap
+	*ih = m->gappih*ie; // inner horizontal gap
+	*iv = m->gappiv*ie; // inner vertical gap
+	*nc = n;            // number of clients
 }
 
 void
@@ -1868,6 +1896,30 @@ void
 tagmonall(const Arg *arg)
 {	
 	Client *c;
+  Monitor *m = dirtomon(arg->i);
+	unsigned int occ, unocc, i;
+	unsigned int tagdest[LENGTH(tags)];
+
+	occ = 0;
+	for (c = m->clients; c; c = c->next)
+       		occ |= (1 << (ffs(c->tags)-1));
+	unocc = 0;
+	for (i = 0; i < LENGTH(tags); ++i) {
+       		while (unocc < i && (occ & (1 << unocc)))
+       				unocc++;
+       		if (occ & (1 << i)) {
+       			tagdest[i] = unocc;
+       			occ &= ~(1 << i);
+       			occ |= 1 << unocc;
+       		}
+       	}
+
+       for (c = selmon->clients; c; c = c->next)
+       		c->tags = 1 << tagdest[ffs(c->tags)-1];
+	if (selmon->sel)
+       		selmon->tagset[selmon->seltags] = selmon->sel->tags;
+	arrange(selmon);
+
 
 	for (c = selmon->clients; c ; nexttiled(c->next))
        	{
@@ -1899,6 +1951,13 @@ togglefloating(const Arg *arg)
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
 			selmon->sel->w, selmon->sel->h, 0);
 	arrange(selmon);
+}
+
+void
+togglegaps(const Arg *arg)
+{
+	selmon->pertag->enablegaps[selmon->pertag->curtag] = !selmon->pertag->enablegaps[selmon->pertag->curtag];
+	arrange(NULL);
 }
 
 void
