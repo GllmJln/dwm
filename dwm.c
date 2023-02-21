@@ -230,6 +230,7 @@ static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tagmonall(const Arg *arg);
 static void togglebar(const Arg *arg);
+static void togglebargaps(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void togglegaps(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -306,14 +307,144 @@ struct Pertag {
 	unsigned int sellts[LENGTH(tags) + 1]; /* selected layouts */
 	const Layout *ltidxs[LENGTH(tags) + 1][2]; /* matrix of tags and layouts indexes  */
 	int showbars[LENGTH(tags) + 1]; /* display bar for the current tag */
-	int gappih;           /* horizontal gap between windows */
-	int gappiv;           /* vertical gap between windows */
-	int gappoh;           /* horizontal outer gaps */
-	int gappov;           /* vertical outer gaps */
+	int gappih[LENGTH(tags) + 1];           /* horizontal gap between windows */
+	int gappiv[LENGTH(tags) + 1];           /* vertical gap between windows */
+	int gappoh[LENGTH(tags) + 1];           /* horizontal outer gaps */
+	int gappov[LENGTH(tags) + 1];           /* vertical outer gaps */
 };
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
 struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
+
+/* Vanit gaps */
+
+void
+setgaps(int oh, int ov, int ih, int iv)
+{
+	if (oh < 0) oh = 0;
+	if (ov < 0) ov = 0;
+	if (ih < 0) ih = 0;
+	if (iv < 0) iv = 0;
+
+	/* selmon->pertag->gappoh = oh; */
+	/* selmon->pertag->gappov = ov; */
+	/* selmon->pertag->gappih = ih; */
+	/* selmon->pertag->gappiv = iv; */
+	arrange(selmon);
+}
+
+
+void
+defaultgaps(const Arg *arg)
+{
+	setgaps(selmon->pertag->gappoh, selmon->pertag->gappov, selmon->pertag->gappih, selmon->pertag->gappiv);
+}
+
+void
+incrgaps(const Arg *arg)
+{
+	setgaps(
+		selmon->pertag->gappoh + arg->i,
+		selmon->pertag->gappov + arg->i,
+		selmon->pertag->gappih + arg->i,
+		selmon->pertag->gappiv + arg->i
+	);
+}
+
+void
+incrigaps(const Arg *arg)
+{
+	setgaps(
+		selmon->pertag->gappoh,
+		selmon->pertag->gappov,
+		selmon->pertag->gappih + arg->i,
+		selmon->pertag->gappiv + arg->i
+	);
+}
+
+void
+incrogaps(const Arg *arg)
+{
+	setgaps(
+		selmon->pertag->gappoh + arg->i,
+		selmon->pertag->gappov + arg->i,
+		selmon->pertag->gappih,
+		selmon->pertag->gappiv
+	);
+}
+
+void
+incrohgaps(const Arg *arg)
+{
+	setgaps(
+		selmon->pertag->gappoh + arg->i,
+		selmon->pertag->gappov,
+		selmon->pertag->gappih,
+		selmon->pertag->gappiv
+	);
+}
+
+void
+incrovgaps(const Arg *arg)
+{
+	setgaps(
+		selmon->pertag->gappoh,
+		selmon->pertag->gappov + arg->i,
+		selmon->pertag->gappih,
+		selmon->pertag->gappiv
+	);
+}
+
+void
+incrihgaps(const Arg *arg)
+{
+	setgaps(
+		selmon->pertag->gappoh,
+		selmon->pertag->gappov,
+		selmon->pertag->gappih + arg->i,
+		selmon->pertag->gappiv
+	);
+}
+
+void
+incrivgaps(const Arg *arg)
+{
+	setgaps(
+		selmon->pertag->gappoh,
+		selmon->pertag->gappov,
+		selmon->pertag->gappih,
+		selmon->pertag->gappiv + arg->i
+	);
+}
+
+
+void
+getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr)
+{
+	unsigned int n;
+	float mfacts, sfacts;
+	int mtotal = 0, stotal = 0;
+	Client *c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	mfacts = MIN(n, m->nmaster);
+	sfacts = n - m->nmaster;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
+		if (n < m->nmaster)
+			mtotal += msize / mfacts;
+		else
+			stotal += ssize / sfacts;
+
+	*mf = mfacts; // total factor of master area
+	*sf = sfacts; // total factor of stack area
+	*mr = msize - mtotal; // the remainder (rest) of pixels after an even master split
+	*sr = ssize - stotal; // the remainder (rest) of pixels after an even stack split
+}
+
+
+
+
 
 /* function implementations */
 void
@@ -715,6 +846,10 @@ createmon(void)
     m->pertag->enablegaps[i] = enablegaps;
 
 		m->pertag->showbars[i] = m->showbar;
+		m->pertag->gappih[i] = m->gappih;
+		m->pertag->gappiv[i] = m->gappiv;
+		m->pertag->gappoh[i] = m->gappoh;
+		m->pertag->gappov[i] = m->gappov;
 	}
 
 	return m;
@@ -1041,7 +1176,7 @@ gettextprop(Window w, Atom atom, char *text, unsigned int size)
 void
 getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc)
 {
-	unsigned int n, oe, ie;
+	int n, oe, ie;
 	oe = ie = selmon->pertag->enablegaps[selmon->pertag->curtag];
 	Client *c;
 
@@ -1050,10 +1185,10 @@ getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc)
 		oe = 0; // outer gaps disabled when only one client
 	}
 
-	*oh = m->gappoh*oe; // outer horizontal gap
-	*ov = m->gappov*oe; // outer vertical gap
-	*ih = m->gappih*ie; // inner horizontal gap
-	*iv = m->gappiv*ie; // inner vertical gap
+	*oh = *(m->pertag->gappoh)*oe; // outer horizontal gap
+	*ov = *(m->pertag->gappov)*oe; // outer vertical gap
+	*ih = *(m->pertag->gappih)*ie; // inner horizontal gap
+	*iv = *(m->pertag->gappiv)*ie; // inner vertical gap
 	*nc = n;            // number of clients
 }
 
@@ -1245,7 +1380,7 @@ monocle(Monitor *m)
 	if (n > 0) /* override layout symbol */
 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
-		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+		resize(c, m->wx, m->wy + vp, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
 }
 
 void
@@ -1939,6 +2074,15 @@ togglebar(const Arg *arg)
 	arrange(selmon);
 }
 
+void
+togglebargaps(const Arg *arg)
+{
+  
+	selmon->showbar = selmon->pertag->showbars[selmon->pertag->curtag] = !selmon->showbar;
+	updatebarpos(selmon);
+	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx + sp, selmon->by + vp, selmon->ww - 2 * sp, bh);
+	arrange(selmon);
+}
 void
 togglefloating(const Arg *arg)
 {
